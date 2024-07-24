@@ -18,6 +18,7 @@ def init_db():
                             temp_max REAL,
                             temp_min REAL,
                             wind REAL,
+                            weather TEXT
                         )''')
         con.commit()
 
@@ -35,20 +36,22 @@ precipitation = st.number_input("Precipitation", format="%.2f")
 temp_max = st.number_input("Max Temperature", format="%.2f")
 temp_min = st.number_input("Min Temperature", format="%.2f")
 wind = st.number_input("Wind", format="%.2f")
+# Weather is not included in the features for prediction
+weather = st.text_input("Weather (for storage only)")
 
 if st.button("Save and Predict"):
     try:
         # Save the data to the SQLite database
         with sql.connect("weather_data.db") as con:
             cur = con.cursor()
-            cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind) VALUES (?,?,?,?,?)", 
-                        (date, precipitation, temp_max, temp_min, wind))
+            cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind, weather) VALUES (?,?,?,?,?,?)", 
+                        (date, precipitation, temp_max, temp_min, wind, weather))
             con.commit()
             st.success("Data successfully saved")
 
         # Make a prediction with the model
         to_predict_list = [precipitation, temp_max, temp_min, wind]
-        to_predict = np.array(to_predict_list).reshape(1, -1)  # Use the correct input features for prediction
+        to_predict = np.array(to_predict_list).reshape(1, -1)  # Use only the features for prediction
         result = model.predict(to_predict)[0]
 
         # Display the prediction result
