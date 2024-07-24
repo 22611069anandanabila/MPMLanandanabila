@@ -18,7 +18,6 @@ def init_db():
                             temp_max REAL,
                             temp_min REAL,
                             wind REAL,
-                            weather TEXT
                         )''')
         con.commit()
 
@@ -42,8 +41,8 @@ if st.button("Save and Predict"):
         # Save the data to the SQLite database
         with sql.connect("weather_data.db") as con:
             cur = con.cursor()
-            cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind, weather) VALUES (?,?,?,?,?,?)", 
-                        (date, precipitation, temp_max, temp_min, wind, weather))
+            cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind) VALUES (?,?,?,?,?)", 
+                        (date, precipitation, temp_max, temp_min, wind))
             con.commit()
             st.success("Data successfully saved")
 
