@@ -36,7 +36,6 @@ precipitation = st.number_input("Precipitation", format="%.2f")
 temp_max = st.number_input("Max Temperature", format="%.2f")
 temp_min = st.number_input("Min Temperature", format="%.2f")
 wind = st.number_input("Wind", format="%.2f")
-weather = st.text_input("Weather")
 
 if st.button("Save and Predict"):
     try:
