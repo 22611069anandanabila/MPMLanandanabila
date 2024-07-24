@@ -1,14 +1,12 @@
-from flask import Flask, render_template, request
+import streamlit as st
 import joblib
 import numpy as np
+import pandas as pd
 import sqlite3 as sql
-
-# Initialize Flask application
-app = Flask(__name__, template_folder='templates')
 
 # Load the Support Vector Machine model from the file
 model = joblib.load('model.sav')
-print("Support Vector Machine model successfully loaded")
+st.write("Support Vector Machine model successfully loaded")
 
 # Function to create the weather table if it does not exist
 def init_db():
@@ -27,62 +25,49 @@ def init_db():
 # Call the init_db function to ensure the table is created when the app starts
 init_db()
 
-# Route for the home page
-@app.route('/')
-def home():
-    return render_template('home.html')
-
-# Route to display the list of weather data
-@app.route('/list')
-def list_weather():
-    con = sql.connect("weather_data.db")
-    con.row_factory = sql.Row
-    
-    cur = con.cursor()
-    cur.execute("SELECT * FROM weather")
-    
-    rows = cur.fetchall()
-    con.close()  # Close the connection after completing
-    return render_template("riwayat.html", rows=rows)
+# Streamlit App
+st.title("Weather Prediction App")
 
 # Route for the input form page
-@app.route('/enternew')
-def new_data():
-    return render_template('form_input.html')
+st.subheader("Enter New Weather Data")
 
-# Route to make predictions with the Support Vector Machine model
-@app.route('/predict', methods=['POST'])
-def predict():
-    if request.method == 'POST':
-        try:
-            # Get values from the form input
-            form_data = request.form.to_dict()
-            form_data['date'] = form_data['date']
-            form_data['precipitation'] = float(form_data['precipitation'])
-            form_data['temp_max'] = float(form_data['temp_max'])
-            form_data['temp_min'] = float(form_data['temp_min'])
-            form_data['wind'] = float(form_data['wind'])
-            form_data['weather'] = form_data['weather']
-            
-            to_predict_list = [form_data['precipitation'], form_data['temp_max'], form_data['temp_min'], form_data['wind']]
+date = st.text_input("Date")
+precipitation = st.number_input("Precipitation", format="%.2f")
+temp_max = st.number_input("Max Temperature", format="%.2f")
+temp_min = st.number_input("Min Temperature", format="%.2f")
+wind = st.number_input("Wind", format="%.2f")
+weather = st.text_input("Weather")
 
-            # Save the data to the SQLite database
-            with sql.connect("weather_data.db") as con:
-                cur = con.cursor()
-                cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind, weather) VALUES (?,?,?,?,?,?)", 
-                            (form_data['date'], form_data['precipitation'], form_data['temp_max'], form_data['temp_min'], form_data['wind'], form_data['weather']))
-                con.commit()
-                msg = "Data successfully saved"
+if st.button("Save and Predict"):
+    try:
+        # Save the data to the SQLite database
+        with sql.connect("weather_data.db") as con:
+            cur = con.cursor()
+            cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind, weather) VALUES (?,?,?,?,?,?)", 
+                        (date, precipitation, temp_max, temp_min, wind, weather))
+            con.commit()
+            st.success("Data successfully saved")
 
-            # Make a prediction with the model
-            to_predict = np.array(to_predict_list).reshape(1, -1)  # Use the correct input features for prediction
-            result = model.predict(to_predict)[0]
+        # Make a prediction with the model
+        to_predict_list = [precipitation, temp_max, temp_min, wind]
+        to_predict = np.array(to_predict_list).reshape(1, -1)  # Use the correct input features for prediction
+        result = model.predict(to_predict)[0]
 
-            # Render the template prediction_result.html with the prediction result
-            return render_template("prediction_result.html", result=result, msg=msg)
-        except Exception as e:
-            print(e)
-            return "An error occurred during prediction."
+        # Display the prediction result
+        st.subheader("Prediction Result")
+        st.write(f"Predicted Weather: {result}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
 
-if __name__ == '__main__':
-    app.run(debug=True, host='192.168.100.76')
+# Route to display the list of weather data
+st.subheader("Weather Data List")
+con = sql.connect("weather_data.db")
+con.row_factory = sql.Row
+cur = con.cursor()
+cur.execute("SELECT * FROM weather")
+rows = cur.fetchall()
+con.close()
+
+# Convert rows to DataFrame for display
+df = pd.DataFrame(rows)
+st.write(df)
