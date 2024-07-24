@@ -31,21 +31,22 @@ st.title("Weather Prediction App")
 # Route for the input form page
 st.subheader("Enter New Weather Data")
 
+# Input fields excluding 'weather'
 date = st.text_input("Date")
 precipitation = st.number_input("Precipitation", format="%.2f")
 temp_max = st.number_input("Max Temperature", format="%.2f")
 temp_min = st.number_input("Min Temperature", format="%.2f")
 wind = st.number_input("Wind", format="%.2f")
-# Weather is not included in the features for prediction
-weather = st.text_input("Weather (for storage only)")
 
 if st.button("Save and Predict"):
     try:
         # Save the data to the SQLite database
+        # We will set a default value for 'weather' for the storage purpose
+        default_weather = "Unknown"
         with sql.connect("weather_data.db") as con:
             cur = con.cursor()
             cur.execute("INSERT INTO weather (date, precipitation, temp_max, temp_min, wind, weather) VALUES (?,?,?,?,?,?)", 
-                        (date, precipitation, temp_max, temp_min, wind, weather))
+                        (date, precipitation, temp_max, temp_min, wind, default_weather))
             con.commit()
             st.success("Data successfully saved")
 
@@ -57,6 +58,14 @@ if st.button("Save and Predict"):
         # Display the prediction result
         st.subheader("Prediction Result")
         st.write(f"Predicted Weather: {result}")
+        
+        # Update the database with the prediction result
+        with sql.connect("weather_data.db") as con:
+            cur = con.cursor()
+            cur.execute("UPDATE weather SET weather = ? WHERE date = ? AND precipitation = ? AND temp_max = ? AND temp_min = ? AND wind = ?",
+                        (result, date, precipitation, temp_max, temp_min, wind))
+            con.commit()
+
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
