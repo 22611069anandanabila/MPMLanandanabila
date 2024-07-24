@@ -32,18 +32,6 @@ st.set_page_config(page_title="Weather Prediction App", page_icon="🌤️", lay
 st.sidebar.title("Navigation")
 selected_option = st.sidebar.radio("Select a page", ["Enter Data", "View Data"])
 
-# Custom CSS
-st.markdown("""
-<style>
-    .main {background-color: #f0f8ff;}
-    .title {color: #1e90ff; font-size: 24px; font-weight: bold;}
-    .subheader {color: #4682b4; font-size: 20px; font-weight: bold;}
-    .button {background-color: #1e90ff; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer;}
-    .button:hover {background-color: #4682b4;}
-    .dataframe th {background-color: #1e90ff; color: white;}
-</style>
-""", unsafe_allow_html=True)
-
 if selected_option == "Enter Data":
     st.title("Weather Prediction App")
     st.subheader("Enter New Weather Data")
@@ -55,7 +43,7 @@ if selected_option == "Enter Data":
     temp_min = st.number_input("Min Temperature", format="%.2f")
     wind = st.number_input("Wind", format="%.2f")
 
-    if st.button("Save and Predict", key='save_predict', help="Click to save the data and make a prediction"):
+    if st.button("Save and Predict"):
         try:
             # Save the data to the SQLite database
             default_weather = "Unknown"
@@ -96,7 +84,6 @@ elif selected_option == "View Data":
 
     # Convert rows to DataFrame for display
     df = pd.DataFrame(rows)
-    st.write(df.style.set_table_styles([
-        {'selector': 'thead th', 'props': [('background-color', '#1e90ff'), ('color', 'white')]},
-        {'selector': 'tbody td', 'props': [('color', '#333')]},
-    ]))
+
+    # Display the DataFrame with basic styling
+    st.write(df.to_html(index=False, classes='table table-striped'), unsafe_allow_html=True)
